@@ -419,11 +419,28 @@ class ConkyManagerGUI:
         self.root.geometry("800x600")
         self.root.minsize(700, 500)
 
+        # Set window icon
+        self.set_window_icon()
+
         self.manager = ConkyManager()
         self.selected_theme = None
 
         self.setup_ui()
         self.refresh_theme_list()
+
+    def set_window_icon(self):
+        """Set the window icon"""
+        icon_paths = [
+            Path.home() / ".local/share/conky-manager/icon.png",
+            Path(__file__).parent / "icon.png",
+        ]
+        for icon_path in icon_paths:
+            if icon_path.exists():
+                try:
+                    self.root.iconphoto(True, tk.PhotoImage(file=str(icon_path)))
+                    return
+                except Exception:
+                    pass
 
     def setup_ui(self):
         """Setup the user interface"""
