@@ -1,0 +1,671 @@
+#!/usr/bin/env python3
+"""
+Conky Manager - A full-featured Python Conky Theme Manager
+Features:
+- Theme discovery from ~/.conky/
+- Theme switching
+- Archive import (zip, tar, tar.gz, tar.xz, 7z)
+- Folder import
+- Autostart configuration
+- Theme editing
+- Theme deletion
+"""
+
+import os
+import sys
+import json
+import shutil
+import subprocess
+import zipfile
+import tarfile
+from pathlib import Path
+from datetime import datetime
+
+try:
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox, scrolledtext
+except ImportError:
+    print("tkinter not found. Install with: sudo apt install python3-tk")
+    sys.exit(1)
+
+# Constants
+HOME = Path.home()
+CONKY_DIR = HOME / ".conky"
+CONKY_CONFIG_DIR = HOME / ".config" / "conky"
+AUTOSTART_DIR = HOME / ".config" / "autostart"
+DATA_DIR = HOME / ".local" / "share" / "conky-manager"
+SETTINGS_FILE = DATA_DIR / "settings.json"
+LOG_FILE = DATA_DIR / "manager.log"
+
+# Supported archive extensions
+ARCHIVE_EXTENSIONS = {
+    '.zip': 'zip',
+    '.tar': 'tar',
+    '.tar.gz': 'tar.gz',
+    '.tgz': 'tar.gz',
+    '.tar.xz': 'tar.xz',
+    '.txz': 'tar.xz',
+    '.tar.bz2': 'tar.bz2',
+    '.tbz2': 'tar.bz2',
+    '.7z': '7z',
+}
+
+
+class ConkyManager:
+    """Main Conky Manager class"""
+
+    def __init__(self):
+        self.ensure_directories()
+        self.settings = self.load_settings()
+        self.themes = []
+        self.current_theme = self.settings.get("current_theme", None)
+        self.scan_themes()
+
+    def ensure_directories(self):
+        """Create necessary directories"""
+        for d in [CONKY_DIR, CONKY_CONFIG_DIR, AUTOSTART_DIR, DATA_DIR]:
+            d.mkdir(parents=True, exist_ok=True)
+
+    def load_settings(self):
+        """Load settings from JSON file"""
+        if SETTINGS_FILE.exists():
+            try:
+                with open(SETTINGS_FILE, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                self.log(f"Error loading settings: {e}")
+        return {
+            "current_theme": None,
+            "autostart_enabled": False,
+            "window_position": {"x": 100, "y": 100},
+        }
+
+    def save_settings(self):
+        """Save settings to JSON file"""
+        try:
+            with open(SETTINGS_FILE, 'w') as f:
+                json.dump(self.settings, f, indent=2)
+        except Exception as e:
+            self.log(f"Error saving settings: {e}")
+
+    def log(self, message):
+        """Log a message"""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_line = f"[{timestamp}] {message}"
+        print(log_line)
+        try:
+            with open(LOG_FILE, 'a') as f:
+                f.write(log_line + "\n")
+        except Exception:
+            pass
+
+    def scan_themes(self):
+        """Scan for conky themes in all known directories"""
+        self.themes = []
+        scanned_configs = set()
+        scanned_names = set()
+
+        # Scan directories
+        dirs_to_scan = [
+            CONKY_DIR,
+            CONKY_CONFIG_DIR,
+        ]
+
+        for scan_dir in dirs_to_scan:
+            if not scan_dir.exists():
+                continue
+            for item in scan_dir.iterdir():
+                if item.is_dir():
+                    theme = self.analyze_theme_dir(item)
+                    if theme and theme['config'] not in scanned_configs and theme['name'] not in scanned_names:
+                        scanned_configs.add(theme['config'])
+                        scanned_names.add(theme['name'])
+                        self.themes.append(theme)
+                elif item.is_file() and item.suffix in ('.conf', '.cfg'):
+                    # Single config files
+                    theme = self.analyze_theme_file(item)
+                    if theme and theme['config'] not in scanned_configs and theme['name'] not in scanned_names:
+                        scanned_configs.add(theme['config'])
+                        scanned_names.add(theme['name'])
+                        self.themes.append(theme)
+
+        # Also check for .conkyrc files
+        for scan_dir in dirs_to_scan:
+            if not scan_dir.exists():
+                continue
+            for item in scan_dir.iterdir():
+                if item.is_file() and item.name in ('.conkyrc', 'conkyrc'):
+                    # Check if already added
+                    if item.name not in scanned_configs and str(item) not in scanned_configs:
+                        theme = self.analyze_theme_file(item)
+                        if theme and theme['config'] not in scanned_configs and theme['name'] not in scanned_names:
+                            scanned_configs.add(theme['config'])
+                            scanned_names.add(theme['name'])
+                            self.themes.append(theme)
+
+        self.log(f"Found {len(self.themes)} themes")
+        return self.themes
+
+    def analyze_theme_dir(self, dir_path):
+        """Analyze a directory for conky theme files"""
+        config_file = None
+        for name in ['.conkyrc', 'conkyrc', '.conf', 'config.conf', 'conky.conf']:
+            candidate = dir_path / name
+            if candidate.exists():
+                config_file = candidate
+                break
+
+        if not config_file:
+            # Check for any .conf files
+            for f in dir_path.glob('*.conf'):
+                config_file = f
+                break
+
+        if not config_file:
+            return None
+
+        return {
+            'name': dir_path.name,
+            'path': str(dir_path),
+            'config': str(config_file),
+            'type': 'directory',
+            'has_lua': any(dir_path.glob('*.lua')),
+            'has_images': any(dir_path.glob('*.png')) or any(dir_path.glob('*.jpg')),
+        }
+
+    def analyze_theme_file(self, file_path):
+        """Analyze a single config file"""
+        parent_dir = file_path.parent
+        return {
+            'name': parent_dir.name if parent_dir != CONKY_DIR else file_path.stem,
+            'path': str(parent_dir),
+            'config': str(file_path),
+            'type': 'file',
+            'has_lua': any(parent_dir.glob('*.lua')),
+            'has_images': any(parent_dir.glob('*.png')) or any(parent_dir.glob('*.jpg')),
+        }
+
+    def start_conky(self, theme):
+        """Start conky with a specific theme"""
+        self.stop_conky()
+
+        config_path = theme['config']
+        if not os.path.exists(config_path):
+            self.log(f"Config file not found: {config_path}")
+            return False
+
+        try:
+            cmd = ['conky', '-c', config_path, '-d']
+            subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            self.current_theme = theme['name']
+            self.settings['current_theme'] = theme['name']
+            self.save_settings()
+            self.log(f"Started conky with theme: {theme['name']}")
+            return True
+        except Exception as e:
+            self.log(f"Error starting conky: {e}")
+            return False
+
+    def stop_conky(self):
+        """Stop all conky instances"""
+        try:
+            subprocess.run(['pkill', 'conky'], capture_output=True, timeout=5)
+            self.log("Stopped conky")
+            return True
+        except (subprocess.TimeoutExpired, Exception) as e:
+            self.log(f"Error stopping conky: {e}")
+            return False
+
+    def is_conky_running(self):
+        """Check if conky is running"""
+        try:
+            result = subprocess.run(['pgrep', 'conky'], capture_output=True, text=True, timeout=5)
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, Exception):
+            return False
+
+    def import_archive(self, archive_path, theme_name=None):
+        """Import a theme from an archive"""
+        archive_path = Path(archive_path)
+        if not archive_path.exists():
+            self.log(f"Archive not found: {archive_path}")
+            return None
+
+        # Determine archive type
+        suffixes = ''.join(archive_path.suffixes)
+        archive_type = None
+        for ext, atype in ARCHIVE_EXTENSIONS.items():
+            if suffixes.endswith(ext):
+                archive_type = atype
+                break
+
+        if not archive_type:
+            self.log(f"Unsupported archive type: {suffixes}")
+            return None
+
+        # Create theme directory
+        if not theme_name:
+            theme_name = archive_path.stem
+            # Clean up name
+            for ext in ['.tar', '.gz', '.xz', '.bz2', '.zip', '.tgz', '.txz', '.tbz2']:
+                theme_name = theme_name.replace(ext, '')
+
+        theme_dir = CONKY_DIR / theme_name
+        theme_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            if archive_type == 'zip':
+                with zipfile.ZipFile(archive_path, 'r') as zf:
+                    zf.extractall(theme_dir)
+            elif archive_type.startswith('tar'):
+                with tarfile.open(archive_path) as tf:
+                    tf.extractall(theme_dir)
+            elif archive_type == '7z':
+                # Try to use 7z command
+                subprocess.run(['7z', 'x', str(archive_path), f'-o{theme_dir}', '-y'],
+                             capture_output=True)
+            else:
+                self.log(f"Unsupported archive type: {archive_type}")
+                return None
+
+            # Find the actual theme directory (might be nested)
+            actual_theme_dir = self.find_theme_in_dir(theme_dir)
+            if actual_theme_dir != theme_dir:
+                # Move contents up
+                for item in actual_theme_dir.iterdir():
+                    shutil.move(str(item), str(theme_dir / item.name))
+                actual_theme_dir.rmdir()
+
+            self.log(f"Imported theme from {archive_path.name}")
+            self.scan_themes()
+            return theme_dir
+
+        except Exception as e:
+            self.log(f"Error importing archive: {e}")
+            if theme_dir.exists():
+                shutil.rmtree(theme_dir)
+            return None
+
+    def find_theme_in_dir(self, dir_path):
+        """Find the actual theme directory inside an extracted archive"""
+        # Check if this directory contains conky config
+        for name in ['.conkyrc', 'conkyrc', '.conf', 'config.conf', 'conky.conf']:
+            if (dir_path / name).exists():
+                return dir_path
+
+        # Check subdirectories
+        for item in dir_path.iterdir():
+            if item.is_dir():
+                for name in ['.conkyrc', 'conkyrc', '.conf', 'config.conf', 'conky.conf']:
+                    if (item / name).exists():
+                        return item
+
+        return dir_path
+
+    def import_folder(self, folder_path, theme_name=None):
+        """Import a theme from a folder"""
+        folder_path = Path(folder_path)
+        if not folder_path.exists() or not folder_path.is_dir():
+            self.log(f"Folder not found: {folder_path}")
+            return None
+
+        if not theme_name:
+            theme_name = folder_path.name
+
+        theme_dir = CONKY_DIR / theme_name
+        theme_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Copy folder contents
+            for item in folder_path.iterdir():
+                dest = theme_dir / item.name
+                if item.is_dir():
+                    shutil.copytree(str(item), str(dest))
+                else:
+                    shutil.copy2(str(item), str(dest))
+
+            self.log(f"Imported theme from folder: {folder_path.name}")
+            self.scan_themes()
+            return theme_dir
+
+        except Exception as e:
+            self.log(f"Error importing folder: {e}")
+            if theme_dir.exists():
+                shutil.rmtree(theme_dir)
+            return None
+
+    def delete_theme(self, theme):
+        """Delete a theme"""
+        theme_path = Path(theme['path'])
+        try:
+            if theme_path.exists():
+                shutil.rmtree(str(theme_path))
+                self.log(f"Deleted theme: {theme['name']}")
+                self.scan_themes()
+                return True
+        except Exception as e:
+            self.log(f"Error deleting theme: {e}")
+        return False
+
+    def set_autostart(self, theme, enabled=True):
+        """Set or remove autostart for a theme"""
+        autostart_file = AUTOSTART_DIR / "conky.desktop"
+
+        if enabled:
+            content = f"""[Desktop Entry]
+Type=Application
+Name=Conky
+Exec=/usr/bin/conky -c {theme['config']}
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+"""
+            try:
+                with open(autostart_file, 'w') as f:
+                    f.write(content)
+                self.log(f"Autostart enabled for: {theme['name']}")
+                return True
+            except Exception as e:
+                self.log(f"Error setting autostart: {e}")
+                return False
+        else:
+            if autostart_file.exists():
+                autostart_file.unlink()
+                self.log("Autostart removed")
+                return True
+            return True
+
+    def get_autostart_theme(self):
+        """Get the current autostart theme"""
+        autostart_file = AUTOSTART_DIR / "conky.desktop"
+        if autostart_file.exists():
+            try:
+                with open(autostart_file, 'r') as f:
+                    content = f.read()
+                    # Extract config path from Exec line
+                    for line in content.split('\n'):
+                        if line.startswith('Exec='):
+                            config_path = line.split('-c ')[-1].strip()
+                            # Find theme with this config
+                            for theme in self.themes:
+                                if theme['config'] == config_path:
+                                    return theme
+            except Exception:
+                pass
+        return None
+
+    def open_theme_folder(self, theme):
+        """Open theme folder in file manager"""
+        try:
+            subprocess.Popen(['xdg-open', theme['path']])
+        except Exception as e:
+            self.log(f"Error opening folder: {e}")
+
+    def edit_theme(self, theme):
+        """Open theme config in editor"""
+        try:
+            editor = os.environ.get('EDITOR', 'xdg-open')
+            subprocess.Popen([editor, theme['config']])
+        except Exception as e:
+            self.log(f"Error opening editor: {e}")
+
+
+class ConkyManagerGUI:
+    """GUI for Conky Manager"""
+
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Conky Manager")
+        self.root.geometry("800x600")
+        self.root.minsize(700, 500)
+
+        self.manager = ConkyManager()
+        self.selected_theme = None
+
+        self.setup_ui()
+        self.refresh_theme_list()
+
+    def setup_ui(self):
+        """Setup the user interface"""
+        # Main container
+        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Header
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(header_frame, text="Conky Manager", font=('Helvetica', 16, 'bold')).pack(side=tk.LEFT)
+
+        # Status indicator
+        self.status_var = tk.StringVar(value="Stopped")
+        self.status_label = ttk.Label(header_frame, textvariable=self.status_var, foreground='red')
+        self.status_label.pack(side=tk.RIGHT, padx=10)
+        self.update_status()
+
+        # Toolbar
+        toolbar_frame = ttk.Frame(main_frame)
+        toolbar_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(toolbar_frame, text="Refresh", command=self.refresh_theme_list).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar_frame, text="Import Archive", command=self.import_archive).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar_frame, text="Import Folder", command=self.import_folder).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar_frame, text="Open ~/.conky", command=self.open_conky_dir).pack(side=tk.LEFT, padx=2)
+
+        # Theme list
+        list_frame = ttk.Frame(main_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        # Treeview
+        columns = ('name', 'type', 'lua', 'status')
+        self.tree = ttk.Treeview(list_frame, columns=columns, show='headings', selectmode='browse')
+
+        self.tree.heading('name', text='Theme Name')
+        self.tree.heading('type', text='Type')
+        self.tree.heading('lua', text='Lua')
+        self.tree.heading('status', text='Status')
+
+        self.tree.column('name', width=300)
+        self.tree.column('type', width=100)
+        self.tree.column('lua', width=80)
+        self.tree.column('status', width=100)
+
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.tree.bind('<<TreeviewSelect>>', self.on_theme_select)
+        self.tree.bind('<Double-1>', self.on_theme_double_click)
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X)
+
+        self.run_btn = ttk.Button(button_frame, text="Run Theme", command=self.run_theme, state=tk.DISABLED)
+        self.run_btn.pack(side=tk.LEFT, padx=2)
+
+        self.stop_btn = ttk.Button(button_frame, text="Stop Conky", command=self.stop_conky)
+        self.stop_btn.pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(button_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=5)
+
+        self.edit_btn = ttk.Button(button_frame, text="Edit", command=self.edit_theme, state=tk.DISABLED)
+        self.edit_btn.pack(side=tk.LEFT, padx=2)
+
+        self.folder_btn = ttk.Button(button_frame, text="Open Folder", command=self.open_theme_folder, state=tk.DISABLED)
+        self.folder_btn.pack(side=tk.LEFT, padx=2)
+
+        self.delete_btn = ttk.Button(button_frame, text="Delete", command=self.delete_theme, state=tk.DISABLED)
+        self.delete_btn.pack(side=tk.LEFT, padx=2)
+
+        ttk.Separator(button_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, fill=tk.Y, padx=5)
+
+        self.autostart_var = tk.BooleanVar(value=False)
+        self.autostart_check = ttk.Checkbutton(button_frame, text="Autostart", variable=self.autostart_var,
+                                               command=self.toggle_autostart, state=tk.DISABLED)
+        self.autostart_check.pack(side=tk.LEFT, padx=2)
+
+        # Info frame
+        info_frame = ttk.LabelFrame(main_frame, text="Theme Info", padding="5")
+        info_frame.pack(fill=tk.X, pady=(10, 0))
+
+        self.info_text = scrolledtext.ScrolledText(info_frame, height=4, wrap=tk.WORD, state=tk.DISABLED)
+        self.info_text.pack(fill=tk.X)
+
+    def refresh_theme_list(self):
+        """Refresh the theme list"""
+        self.tree.delete(*self.tree.get_children())
+        self.manager.scan_themes()
+
+        for theme in self.manager.themes:
+            is_current = theme['name'] == self.manager.current_theme
+            status = "Running" if is_current else ""
+            lua = "Yes" if theme['has_lua'] else "No"
+            self.tree.insert('', tk.END, values=(theme['name'], theme['type'], lua, status),
+                           tags=('current' if is_current else '',))
+
+        self.tree.tag_configure('current', foreground='green')
+
+    def on_theme_select(self, event):
+        """Handle theme selection"""
+        selection = self.tree.selection()
+        if selection:
+            item = self.tree.item(selection[0])
+            theme_name = item['values'][0]
+            self.selected_theme = next((t for t in self.manager.themes if t['name'] == theme_name), None)
+
+            if self.selected_theme:
+                self.run_btn.config(state=tk.NORMAL)
+                self.edit_btn.config(state=tk.NORMAL)
+                self.folder_btn.config(state=tk.NORMAL)
+                self.delete_btn.config(state=tk.NORMAL)
+                self.autostart_check.config(state=tk.NORMAL)
+
+                # Check if autostart
+                autostart_theme = self.manager.get_autostart_theme()
+                self.autostart_var.set(autostart_theme and autostart_theme['name'] == theme_name)
+
+                # Show info
+                self.show_theme_info(self.selected_theme)
+
+    def on_theme_double_click(self, event):
+        """Handle double click - run theme"""
+        self.run_theme()
+
+    def show_theme_info(self, theme):
+        """Show theme information"""
+        self.info_text.config(state=tk.NORMAL)
+        self.info_text.delete(1.0, tk.END)
+
+        info = f"Name: {theme['name']}\n"
+        info += f"Path: {theme['path']}\n"
+        info += f"Config: {theme['config']}\n"
+        info += f"Has Lua: {'Yes' if theme['has_lua'] else 'No'}\n"
+        info += f"Has Images: {'Yes' if theme['has_images'] else 'No'}"
+
+        self.info_text.insert(tk.END, info)
+        self.info_text.config(state=tk.DISABLED)
+
+    def run_theme(self):
+        """Run the selected theme"""
+        if self.selected_theme:
+            if self.manager.start_conky(self.selected_theme):
+                self.update_status()
+                self.refresh_theme_list()
+                messagebox.showinfo("Success", f"Theme '{self.selected_theme['name']}' started!")
+
+    def stop_conky(self):
+        """Stop conky"""
+        self.manager.stop_conky()
+        self.manager.current_theme = None
+        self.update_status()
+        self.refresh_theme_list()
+
+    def edit_theme(self):
+        """Edit the selected theme"""
+        if self.selected_theme:
+            self.manager.edit_theme(self.selected_theme)
+
+    def open_theme_folder(self):
+        """Open the selected theme folder"""
+        if self.selected_theme:
+            self.manager.open_theme_folder(self.selected_theme)
+
+    def delete_theme(self):
+        """Delete the selected theme"""
+        if self.selected_theme:
+            if messagebox.askyesno("Confirm Delete",
+                                  f"Are you sure you want to delete '{self.selected_theme['name']}'?"):
+                if self.manager.delete_theme(self.selected_theme):
+                    self.selected_theme = None
+                    self.run_btn.config(state=tk.DISABLED)
+                    self.edit_btn.config(state=tk.DISABLED)
+                    self.folder_btn.config(state=tk.DISABLED)
+                    self.delete_btn.config(state=tk.DISABLED)
+                    self.autostart_check.config(state=tk.DISABLED)
+                    self.refresh_theme_list()
+
+    def toggle_autostart(self):
+        """Toggle autostart for the selected theme"""
+        if self.selected_theme:
+            self.manager.set_autostart(self.selected_theme, self.autostart_var.get())
+
+    def import_archive(self):
+        """Import a theme from an archive"""
+        filetypes = [
+            ("Archives", "*.zip *.tar *.tar.gz *.tgz *.tar.xz *.txz *.tar.bz2 *.tbz2 *.7z"),
+            ("ZIP", "*.zip"),
+            ("TAR", "*.tar *.tar.gz *.tgz *.tar.xz *.txz *.tar.bz2 *.tbz2"),
+            ("7z", "*.7z"),
+            ("All files", "*.*"),
+        ]
+        filepath = filedialog.askopenfilename(
+            title="Select Archive",
+            filetypes=filetypes
+        )
+        if filepath:
+            theme_name = filedialog.askstring("Theme Name", "Enter theme name (or leave empty):")
+            result = self.manager.import_archive(filepath, theme_name or None)
+            if result:
+                self.refresh_theme_list()
+                messagebox.showinfo("Success", "Theme imported successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to import theme!")
+
+    def import_folder(self):
+        """Import a theme from a folder"""
+        folder = filedialog.askdirectory(title="Select Theme Folder")
+        if folder:
+            theme_name = filedialog.askstring("Theme Name", "Enter theme name (or leave empty):")
+            result = self.manager.import_folder(folder, theme_name or None)
+            if result:
+                self.refresh_theme_list()
+                messagebox.showinfo("Success", "Theme imported successfully!")
+            else:
+                messagebox.showerror("Error", "Failed to import theme!")
+
+    def open_conky_dir(self):
+        """Open the conky directory"""
+        self.manager.open_theme_folder({'path': str(CONKY_DIR)})
+
+    def update_status(self):
+        """Update the status indicator"""
+        if self.manager.is_conky_running():
+            self.status_var.set("Running")
+            self.status_label.config(foreground='green')
+        else:
+            self.status_var.set("Stopped")
+            self.status_label.config(foreground='red')
+
+
+def main():
+    """Main entry point"""
+    root = tk.Tk()
+    app = ConkyManagerGUI(root)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
