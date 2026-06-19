@@ -12,9 +12,10 @@ graphic_card_model = "Type Your Model Here"
 enable_graphic_card_temperature_sensor= "No" 
 
 -- Colors
-HTML_colors = "#000000"
+HTML_colors = "#FFFFFF"
 HTML_colors_current = "#FFFFFF"
-transparency = 0.25 -- From 0 to 1
+transparency = 0.3 -- Background circles transparency (0 to 1)
+transparency_active = 0.9 -- Active/current elements transparency (0 to 1)
 
 -- Scaled relative position from middle. Positive x and y means left and up, negative x and y means right and down.
 x_rel_pos = 0
@@ -109,7 +110,7 @@ function create_circle_hdd(cr,w,h,elements,distance_between_blocks, radius, line
   
   for i=1, elements do
     if charged_elements >= i then
-      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency)
+      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency_active)
     end
     cairo_arc(cr, w,h,radius,start_angel*math.pi/180,(start_angel+number_of_arcs)*math.pi/180)
     cairo_stroke(cr)
@@ -127,7 +128,7 @@ function create_circle(cr,w,h, elements, distance_between_blocks, two_number_deg
   
   for i=1, elements do
     if i == current then
-      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency)
+      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency_active)
     end
     cairo_arc(cr, w/2, h/2, radius, start_angel*math.pi/180, (start_angel+number_of_arcs)*math.pi/180)
     cairo_stroke(cr)
@@ -140,7 +141,7 @@ function create_circle(cr,w,h, elements, distance_between_blocks, two_number_deg
   
   for i=1, elements do
     if i == current then
-      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency)
+      cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency_active)
     end
     if string.len(tostring(i)) == 2 and days == "" then
       cairo_move_to(cr,w/2+((radius+radius_shift_for_text)*math.cos((start_angel+(((number_of_arcs-two_number_degree)/2)))*(math.pi/180.0))),h/2+((radius+radius_shift_for_text)*math.sin((start_angel+(((number_of_arcs-two_number_degree)/2)))*(math.pi/180.0))))
@@ -175,10 +176,9 @@ function vertical_bars(cr,w,h,x,y,conky_value)
     
     for i=1,10 do
       if number_of_filled_blocks >= i then
-	cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency)
+	cairo_set_source_rgba(cr, r_c,g_c,b_c,transparency_active)
       end
-      --cairo_rectangle(cr, w/2-x, h/2+y-i*5,15,3)
-      cairo_rectangle(cr, w, h/2+y-i*5,15,3)
+      cairo_rectangle(cr, w, h/2+y-i*3,8,2)
       cairo_fill(cr)
       cairo_set_source_rgba(cr, r,g,b,transparency)
     end
@@ -265,19 +265,19 @@ function draw_function(cr)
   
 --- Temperatures ---
 
-  cairo_move_to(cr,(w-x_rel_pos)/2-50,(h-y_rel_pos)/2+100)
-  cairo_set_font_size(cr,12)
+  cairo_move_to(cr,(w-x_rel_pos)/2-50,(h-y_rel_pos)/2+50)
+  cairo_set_font_size(cr,8)
 
   for i=1, number_of_physical_CPU_cores do
-    x = (w-x_rel_pos)/2-((15*number_of_physical_CPU_cores)+15*(number_of_physical_CPU_cores-1))/2+30*(i-1)
+    x = (w-x_rel_pos)/2-((8*number_of_physical_CPU_cores)+5*(number_of_physical_CPU_cores-1))/2+13*(i-1)
     
     if enable_graphic_card_temperature_sensor == "Yes" and i == number_of_physical_CPU_cores then
       str= tonumber(conky_parse("${exec nvidia-smi | grep '" .. graphic_card_model .. "' -A 1 | tail -n 1 | awk '{print $3}' | cut -b1,2}"))
       vertical_bars(cr,x,h-y_rel_pos,64,75,str)
-      cairo_arc(cr,x+8,(h-y_rel_pos)/2+90,7,0,2*math.pi)
+      cairo_arc(cr,x+4,(h-y_rel_pos)/2+50,4,0,2*math.pi)
       cairo_fill(cr)
       cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR)
-      cairo_move_to(cr,x+3,(h-y_rel_pos)/2+94)
+      cairo_move_to(cr,x+1,(h-y_rel_pos)/2+53)
       cairo_show_text(cr,"G")
       cairo_set_operator(cr, CAIRO_OPERATOR_OVER)
     else
@@ -285,10 +285,10 @@ function draw_function(cr)
       local temp_val = tonumber(conky_parse(str))
       if temp_val == nil then temp_val = 0 end
       vertical_bars(cr,x,h-y_rel_pos,64,75,temp_val)
-      cairo_arc(cr,x+8,(h-y_rel_pos)/2+90,7,0,2*math.pi)
+      cairo_arc(cr,x+4,(h-y_rel_pos)/2+50,4,0,2*math.pi)
       cairo_fill(cr)
       cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR)
-      cairo_move_to(cr,x+5,(h-y_rel_pos)/2+94)
+      cairo_move_to(cr,x+2,(h-y_rel_pos)/2+53)
       cairo_show_text(cr,tostring(i-1))
       cairo_set_operator(cr, CAIRO_OPERATOR_OVER)
     end
