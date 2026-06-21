@@ -19,6 +19,7 @@ import subprocess
 import zipfile
 import tarfile
 import threading
+import re
 from pathlib import Path
 from datetime import datetime
 
@@ -538,6 +539,7 @@ class ConkyManagerGUI:
         ctk.CTkButton(toolbar_frame, text="Import Folder", command=self.import_folder, width=110, height=20, border_spacing=0, corner_radius=0, font=('Helvetica', 10)).pack(side="left", padx=2)
         ctk.CTkButton(toolbar_frame, text="Layout", command=self.open_layout_editor, width=70, height=20, border_spacing=0, corner_radius=0, font=('Helvetica', 10)).pack(side="left", padx=2)
         ctk.CTkButton(toolbar_frame, text="Open ~/.conky", command=self.open_conky_dir, width=110, height=20, border_spacing=0, corner_radius=0, font=('Helvetica', 10)).pack(side="left", padx=2)
+        ctk.CTkButton(toolbar_frame, text="Settings", command=self.open_settings, width=70, height=20, border_spacing=0, corner_radius=0, font=('Helvetica', 10)).pack(side="left", padx=2)
 
         sep1 = ctk.CTkFrame(toolbar_frame, width=2, height=20, fg_color="gray40")
         sep1.pack(side="left", fill="y", padx=5)
@@ -880,6 +882,62 @@ class ConkyManagerGUI:
     def open_layout_editor(self):
         """Open the layout editor"""
         layout_editor.LayoutEditor(self.root)
+
+    def open_settings(self):
+        """Open the settings window for theme configuration"""
+        settings_win = ctk.CTkToplevel(self.root)
+        settings_win.title("Settings")
+        settings_win.geometry("400x320")
+        settings_win.resizable(False, False)
+        settings_win.transient(self.root)
+        settings_win.grab_set()
+
+        frame = ctk.CTkFrame(settings_win)
+        frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        ctk.CTkLabel(frame, text="Theme Settings", font=('Helvetica', 14, 'bold')).pack(pady=(10, 15))
+
+        # Weather settings
+        weather_file = Path.home() / ".config/conky/weather-conky-manager/settings.lua"
+        weather_defaults = {"api_key": "", "city": "", "country_code": ""}
+        if weather_file.exists():
+            content = weather_file.read_text()
+            for key in weather_defaults:
+                match = re.search(rf'{key}\s*=\s*"([^"]*)"', content)
+                if match:
+                    weather_defaults[key] = match.group(1)
+
+        ctk.CTkLabel(frame, text="Weather Settings", font=('Helvetica', 12, 'bold')).pack(anchor="w", padx=10, pady=(5, 2))
+
+        ctk.CTkLabel(frame, text="API Key:", font=('Helvetica', 10)).pack(anchor="w", padx=10)
+        api_key_var = tk.StringVar(value=weather_defaults["api_key"])
+        ctk.CTkEntry(frame, textvariable=api_key_var, width=360, font=('Helvetica', 10)).pack(padx=10, pady=(0, 5))
+
+        ctk.CTkLabel(frame, text="City:", font=('Helvetica', 10)).pack(anchor="w", padx=10)
+        city_var = tk.StringVar(value=weather_defaults["city"])
+        ctk.CTkEntry(frame, textvariable=city_var, width=360, font=('Helvetica', 10)).pack(padx=10, pady=(0, 5))
+
+        ctk.CTkLabel(frame, text="Country Code:", font=('Helvetica', 10)).pack(anchor="w", padx=10)
+        country_var = tk.StringVar(value=weather_defaults["country_code"])
+        ctk.CTkEntry(frame, textvariable=country_var, width=100, font=('Helvetica', 10)).pack(anchor="w", padx=10, pady=(0, 10))
+
+        def save_settings():
+            if weather_file.exists():
+                content = weather_file.read_text()
+                content = re.sub(r'(api_key\s*=\s*")[^"]*"', rf'\g<1>{api_key_var.get()}"', content)
+                content = re.sub(r'(city\s*=\s*")[^"]*"', rf'\g<1>{city_var.get()}"', content)
+                content = re.sub(r'(country_code\s*=\s*")[^"]*"', rf'\g<1>{country_var.get()}"', content)
+                weather_file.write_text(content)
+                # Also copy to system
+                system_weather = Path.home() / ".config/conky/weather-conky-manager/settings.lua"
+                if system_weather != weather_file:
+                    import shutil
+                    shutil.copy2(str(weather_file), str(system_weather))
+            messagebox.showinfo("Settings", "Settings saved. Restart weather theme to apply.")
+            settings_win.destroy()
+
+        ctk.CTkButton(frame, text="Save", command=save_settings, width=100, height=28,
+                      border_spacing=0, corner_radius=0, font=('Helvetica', 10)).pack(pady=10)
 
     def check_for_updates(self):
         """Check for updates on startup (non-blocking)"""
