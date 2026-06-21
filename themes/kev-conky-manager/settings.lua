@@ -2,7 +2,7 @@
 -- Displays recent KEV entries from CISA
 
 require 'cairo'
-require 'cairo_xlib'
+pcall(require, 'cairo_xlib')
 assert(os.setlocale("en_US.utf8", "numeric"))
 
 -- Colors (matching system-widgets exactly)

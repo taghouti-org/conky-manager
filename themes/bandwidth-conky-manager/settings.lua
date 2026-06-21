@@ -1,11 +1,12 @@
 require 'cairo'
-require 'cairo_xlib'
+pcall(require, 'cairo_xlib')
 os.setlocale("en_US.utf8", "numeric")
 
 -- ###Bandwidth settings###
 iface = "auto"
 
 -- ###Style###
+HTML_color = "#FFFFFF"
 HTML_color_border = "#FFFFFF"
 transparency_bg = 0.6
 transparency_border = 0.1

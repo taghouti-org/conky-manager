@@ -1119,15 +1119,24 @@ class ConkyManagerGUI:
                         if src.exists():
                             shutil.copy2(str(src), str(dst))
 
-                    # Copy themes to system
+                    # Copy themes to system (preserve user settings)
                     themes_dir = repo_path / "themes"
                     if themes_dir.exists():
                         for theme_dir in themes_dir.iterdir():
                             if theme_dir.is_dir() and theme_dir.name.endswith("-conky-manager"):
                                 dst = conky_config / theme_dir.name
+                                # Preserve user-customized settings.lua before overwrite
+                                preserved = {}
                                 if dst.exists():
+                                    for preserve_file in ["settings.lua"]:
+                                        pf = dst / preserve_file
+                                        if pf.exists():
+                                            preserved[preserve_file] = pf.read_text()
                                     shutil.rmtree(str(dst))
                                 shutil.copytree(str(theme_dir), str(dst))
+                                # Restore user-customized settings
+                                for fname, content in preserved.items():
+                                    (dst / fname).write_text(content)
 
                     self.has_update = False
                     self.update_btn.configure(text="Update")

@@ -2,7 +2,7 @@
 -- Styled exactly like Conky-Revisited-2
 
 require 'cairo'
-require 'cairo_xlib'
+pcall(require, 'cairo_xlib')
 
 -- Colors (matching Revisited-2 exactly)
 HTML_color = "#FFFFFF"

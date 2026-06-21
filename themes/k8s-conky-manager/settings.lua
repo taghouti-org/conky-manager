@@ -1,5 +1,5 @@
 require 'cairo'
-require 'cairo_xlib'
+pcall(require, 'cairo_xlib')
 os.setlocale("en_US.utf8", "numeric")
 
 HTML_color = "#FFFFFF"
