@@ -1,5 +1,5 @@
--- Security Vulnerabilities Widget
--- Displays recent KEV entries from CISA
+-- Infrastructure Vulnerabilities Widget
+-- Monitors CVEs for k8s, docker, keycloak, postgres, helm, argo, etc.
 
 require 'cairo'
 assert(os.setlocale("en_US.utf8", "numeric"))
@@ -14,7 +14,7 @@ transparency_value = 0.9
 mode = 1
 border_size = 4
 
-HTML_critical = "#ff4444"
+HTML_critical = "#ff8800"
 
 operator = {CAIRO_OPERATOR_SOURCE, CAIRO_OPERATOR_CLEAR}
 operator_transpose = {CAIRO_OPERATOR_CLEAR, CAIRO_OPERATOR_SOURCE}
@@ -52,39 +52,33 @@ function draw_text(cr, x, y, text, font_size, trans)
     cairo_show_text(cr, text)
 end
 
-function draw_icon_shield(cr, x, y, size)
+function draw_icon_server(cr, x, y, size)
     cairo_set_operator(cr, operator_transpose[mode])
     cairo_set_source_rgba(cr, r, g, b, transparency_value)
     cairo_set_line_width(cr, 1.5)
     local w = size * 0.35
     local h = size * 0.45
-    -- Shield shape
-    cairo_move_to(cr, x, y - h)
-    cairo_line_to(cr, x + w, y - h * 0.5)
-    cairo_line_to(cr, x + w, y + h * 0.2)
-    cairo_line_to(cr, x, y + h)
-    cairo_line_to(cr, x - w, y + h * 0.2)
-    cairo_line_to(cr, x - w, y - h * 0.5)
-    cairo_close_path(cr)
-    cairo_stroke(cr)
-    -- Exclamation mark
-    cairo_move_to(cr, x, y - h * 0.3)
-    cairo_line_to(cr, x, y + h * 0.15)
-    cairo_stroke(cr)
-    cairo_arc(cr, x, y + h * 0.35, 2, 0, 2 * math.pi)
-    cairo_fill(cr)
+    -- Server stack (3 rectangles)
+    for i = 0, 2 do
+        local ry = y - h + i * (h * 0.65)
+        cairo_rectangle(cr, x - w, ry, w * 2, h * 0.5)
+        cairo_stroke(cr)
+        -- LED dot
+        cairo_arc(cr, x - w + 4, ry + h * 0.25, 1.5, 0, 2 * math.pi)
+        cairo_fill(cr)
+    end
 end
 
-function draw_vuln_widget(cr, x, y)
+function draw_infra_widget(cr, x, y)
     local w, h = 250, 250
 
     draw_square(cr, x, y, w, h, transparency_bg)
 
-    draw_icon_shield(cr, x + 15, y + 15, 20)
-    draw_text(cr, x + 35, y + 20, "KEV", 12, transparency_value)
+    draw_icon_server(cr, x + 15, y + 15, 20)
+    draw_text(cr, x + 35, y + 20, "INFRA", 12, transparency_value)
 
     -- Fetch data
-    local raw = conky_parse("${exec python3 ~/.config/conky/security-vulns/fetch_vulns.py --get_list --count 5 2>/dev/null}")
+    local raw = conky_parse("${exec python3 ~/.config/conky/infra-conky-manager/fetch_infra_vulns.py --get_list --count 5 2>/dev/null}")
 
     local cy = y + 45
     local count = 0
@@ -93,7 +87,7 @@ function draw_vuln_widget(cr, x, y)
         for line in raw:gmatch("[^\n]+") do
             local id, vendor, product, date = line:match("([^|]+)|([^|]+)|([^|]+)|([^|]+)")
             if id and count < 5 then
-                -- CVE ID in red
+                -- CVE ID in orange
                 cairo_set_operator(cr, operator_transpose[mode])
                 cairo_set_source_rgba(cr, r_crit, g_crit, b_crit, transparency_value)
                 cairo_set_font_size(cr, 11)
@@ -117,7 +111,7 @@ function draw_vuln_widget(cr, x, y)
     end
 
     if count == 0 then
-        draw_text(cr, x + 10, cy, "No KEV entries", 11, transparency_text)
+        draw_text(cr, x + 10, cy, "No infra CVEs", 11, transparency_text)
     end
 
     -- Footer
@@ -128,10 +122,10 @@ function draw_function(cr)
     local w, h = conky_window.width, conky_window.height
     cairo_select_font_face(cr, "Dejavu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
 
-    -- Right side, below system widgets
-    local widget_x = w - 280
-    local widget_y = 870
-    draw_vuln_widget(cr, widget_x, widget_y)
+    -- Left side, below crypto widget
+    local widget_x = 30
+    local widget_y = 980
+    draw_infra_widget(cr, widget_x, widget_y)
 end
 
 function conky_start_widgets()

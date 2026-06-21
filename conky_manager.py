@@ -528,7 +528,7 @@ class ConkyManagerGUI:
 
         # Treeview
         columns = ('name', 'type', 'lua', 'autostart', 'status')
-        self.tree = ttk.Treeview(list_frame, columns=columns, show='headings', selectmode='browse')
+        self.tree = ttk.Treeview(list_frame, columns=columns, show='headings', selectmode='extended')
 
         self.tree.heading('name', text='Theme Name')
         self.tree.heading('type', text='Type')
@@ -601,12 +601,11 @@ class ConkyManagerGUI:
 
     def refresh_theme_list(self):
         """Refresh the theme list"""
-        # Save current selection
-        selected_name = None
-        selection = self.tree.selection()
-        if selection:
-            item = self.tree.item(selection[0])
-            selected_name = item['values'][0]
+        # Save current selection (all selected items)
+        selected_names = []
+        for item in self.tree.selection():
+            values = self.tree.item(item)['values']
+            selected_names.append(values[0])
 
         self.tree.delete(*self.tree.get_children())
         self.manager.scan_themes()
@@ -621,26 +620,28 @@ class ConkyManagerGUI:
 
         self.tree.tag_configure('running', foreground='green')
 
-        # Restore selection and buttons
-        if selected_name:
-            for item in self.tree.get_children():
-                values = self.tree.item(item, 'values')
-                if values[0] == selected_name:
-                    self.tree.selection_set(item)
-                    self.tree.see(item)
-                    # Re-enable buttons directly
-                    self.selected_theme = next((t for t in self.manager.themes if t['name'] == selected_name), None)
-                    if self.selected_theme:
-                        self.run_btn.config(state=tk.NORMAL)
-                        self.edit_btn.config(state=tk.NORMAL)
-                        self.folder_btn.config(state=tk.NORMAL)
-                        self.delete_btn.config(state=tk.NORMAL)
-                        self.autostart_check.config(state=tk.NORMAL)
-                        is_running = self.manager.is_theme_running(self.selected_theme)
-                        self.stop_theme_btn.config(state=tk.NORMAL if is_running else tk.DISABLED)
-                        self.restart_theme_btn.config(state=tk.NORMAL if is_running else tk.DISABLED)
-                        self.autostart_var.set(self.manager.is_autostart(self.selected_theme))
-                    break
+        # Restore all selections
+        new_selection = []
+        for item in self.tree.get_children():
+            values = self.tree.item(item, 'values')
+            if values[0] in selected_names:
+                new_selection.append(item)
+        if new_selection:
+            self.tree.selection_set(new_selection)
+            self.tree.see(new_selection[0])
+            # Update buttons based on last selected
+            name = self.tree.item(new_selection[-1])['values'][0]
+            self.selected_theme = next((t for t in self.manager.themes if t['name'] == name), None)
+            if self.selected_theme:
+                self.run_btn.config(state=tk.NORMAL)
+                self.edit_btn.config(state=tk.NORMAL)
+                self.folder_btn.config(state=tk.NORMAL)
+                self.delete_btn.config(state=tk.NORMAL)
+                self.autostart_check.config(state=tk.NORMAL)
+                is_running = self.manager.is_theme_running(self.selected_theme)
+                self.stop_theme_btn.config(state=tk.NORMAL if is_running else tk.DISABLED)
+                self.restart_theme_btn.config(state=tk.NORMAL if is_running else tk.DISABLED)
+                self.autostart_var.set(self.manager.is_autostart(self.selected_theme))
 
     def on_theme_select(self, event):
         """Handle theme selection"""
@@ -686,21 +687,31 @@ class ConkyManagerGUI:
         self.info_text.insert(tk.END, info)
         self.info_text.config(state=tk.DISABLED)
 
+    def get_selected_themes(self):
+        """Get all selected themes"""
+        themes = []
+        for item in self.tree.selection():
+            values = self.tree.item(item)['values']
+            name = values[0]
+            theme = next((t for t in self.manager.themes if t['name'] == name), None)
+            if theme:
+                themes.append(theme)
+        return themes
+
     def run_theme(self):
-        """Run the selected theme"""
-        if self.selected_theme:
-            if self.manager.start_conky(self.selected_theme):
-                self.update_status()
-                self.refresh_theme_list()
-                self.stop_theme_btn.config(state=tk.NORMAL)
+        """Run all selected themes"""
+        for theme in self.get_selected_themes():
+            self.manager.start_conky(theme)
+        self.update_status()
+        self.refresh_theme_list()
 
     def stop_theme(self):
-        """Stop the selected theme"""
-        if self.selected_theme:
-            if self.manager.stop_theme(self.selected_theme):
-                self.update_status()
-                self.refresh_theme_list()
-                self.stop_theme_btn.config(state=tk.DISABLED)
+        """Stop all selected themes"""
+        for theme in self.get_selected_themes():
+            self.manager.stop_theme(theme)
+        self.update_status()
+        self.refresh_theme_list()
+        self.stop_theme_btn.config(state=tk.DISABLED)
 
     def stop_conky(self):
         """Stop all conky instances"""
@@ -710,12 +721,12 @@ class ConkyManagerGUI:
         self.stop_theme_btn.config(state=tk.DISABLED)
 
     def restart_theme(self):
-        """Restart the selected theme"""
-        if self.selected_theme:
-            self.manager.stop_theme(self.selected_theme)
-            self.manager.start_conky(self.selected_theme)
-            self.update_status()
-            self.refresh_theme_list()
+        """Restart all selected themes"""
+        for theme in self.get_selected_themes():
+            self.manager.stop_theme(theme)
+            self.manager.start_conky(theme)
+        self.update_status()
+        self.refresh_theme_list()
 
     def restart_all(self):
         """Restart all currently running themes"""
@@ -753,10 +764,11 @@ class ConkyManagerGUI:
                     self.refresh_theme_list()
 
     def toggle_autostart(self):
-        """Toggle autostart for the selected theme"""
-        if self.selected_theme:
-            self.manager.set_autostart(self.selected_theme, self.autostart_var.get())
-            self.refresh_theme_list()
+        """Toggle autostart for all selected themes"""
+        enabled = self.autostart_var.get()
+        for theme in self.get_selected_themes():
+            self.manager.set_autostart(theme, enabled)
+        self.refresh_theme_list()
 
     def open_layout_editor(self):
         """Open the layout editor"""
