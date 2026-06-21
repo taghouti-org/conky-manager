@@ -103,10 +103,10 @@ function draw_function(cr)
 	draw_text(cr, pos_x, pos_y, r_text, g_text, b_text, transparency_text, day, Day_font, 0, 35)
   ----Temperature
 	cairo_select_font_face (cr, "Dejavu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD)
-	temperature = conky_parse("${exec ~/.config/conky/Conky-Weather/openweather.py --get_temp_c --api_key " .. api_key .. " --city " .. "\"" .. city .. "\"" .. " --ccode " .. country_code .. "}")
+	temperature = conky_parse("${exec ~/.config/conky/weather-conky-manager/openweather.py --get_temp_c --api_key " .. api_key .. " --city " .. "\"" .. city .. "\"" .. " --ccode " .. country_code .. "}")
 	draw_text(cr, pos_x, pos_y, r_text, g_text, b_text, transparency_text, temperature .. "˚C", Temperature_font, 19.25, 0)
   ----Draw weathor icon
-  	image_path = conky_parse("${exec ~/.config/conky/Conky-Weather/openweather.py --get_weather_icon --api_key " .. api_key .. " --city " .. "\"" .. city .. "\"" .. " --ccode " .. country_code .. "}")
+  	image_path = conky_parse("${exec ~/.config/conky/weather-conky-manager/openweather.py --get_weather_icon --api_key " .. api_key .. " --city " .. "\"" .. city .. "\"" .. " --ccode " .. country_code .. "}")
   	draw_weather_icon(cr, pos_x-60, pos_y, image_path, transparency_weather_icon)
 
 end

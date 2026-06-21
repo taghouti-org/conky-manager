@@ -181,15 +181,18 @@ class LayoutEditor:
         layout = load_layout()
         running = self.get_running_themes()
         default_widgets = {
-            "crypto-tracker": {"x": 30, "y": 720, "w": 250, "h": 250, "color": "#e94560"},
-            "security-vulns": {"x": 1640, "y": 870, "w": 250, "h": 250, "color": "#ff4444"},
-            "infra-vulns": {"x": 30, "y": 980, "w": 250, "h": 250, "color": "#ff8800"},
-            "Conky-Weather": {"x": 1520, "y": 50, "w": 400, "h": 400, "color": "#4488ff"},
-            "Conky-Calendar-Extra": {"x": 660, "y": 50, "w": 600, "h": 500, "color": "#44ff88"},
-            "claude": {"x": 1520, "y": 470, "w": 300, "h": 300, "color": "#8888ff"},
-            "modern": {"x": 1180, "y": 470, "w": 320, "h": 300, "color": "#ff88ff"},
-            "system-widgets": {"x": 0, "y": 50, "w": 640, "h": 400, "color": "#444488"},
-            "Conky_Revisited_2": {"x": 0, "y": 470, "w": 640, "h": 400, "color": "#884488"},
+            "crypto-conky-manager": {"x": 30, "y": 720, "w": 250, "h": 250, "color": "#e94560"},
+            "kev-conky-manager": {"x": 1640, "y": 870, "w": 250, "h": 250, "color": "#ff4444"},
+            "infra-conky-manager": {"x": 30, "y": 980, "w": 250, "h": 250, "color": "#ff8800"},
+            "bandwidth-conky-manager": {"x": 30, "y": 400, "w": 220, "h": 120, "color": "#4488ff"},
+            "network-conky-manager": {"x": 30, "y": 540, "w": 220, "h": 160, "color": "#44aaff"},
+            "processes-conky-manager": {"x": 1670, "y": 300, "w": 250, "h": 220, "color": "#ff88ff"},
+            "docker-conky-manager": {"x": 1670, "y": 540, "w": 250, "h": 180, "color": "#88ff88"},
+            "k8s-conky-manager": {"x": 1670, "y": 740, "w": 250, "h": 140, "color": "#ffff44"},
+            "weather-conky-manager": {"x": 1520, "y": 50, "w": 400, "h": 400, "color": "#4488ff"},
+            "calendar-conky-manager": {"x": 660, "y": 50, "w": 600, "h": 500, "color": "#44ff88"},
+            "claude-conky-manager": {"x": 1520, "y": 470, "w": 300, "h": 300, "color": "#8888ff"},
+            "revisited-conky-manager": {"x": 0, "y": 470, "w": 640, "h": 400, "color": "#884488"},
         }
 
         for name, defaults in default_widgets.items():
