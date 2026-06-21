@@ -127,7 +127,7 @@ class WidgetRect:
             fill="#ff4444", outline="#ffffff", width=1,
             tags=("resize_handle", self.name)
         )
-        bw, bh = 18, 14
+        bw, bh = 14, 12
         bx = sx + sw - bw * 2 - 4
         by = sy + 2
         self.h_btn = self.canvas.create_rectangle(
@@ -145,7 +145,7 @@ class WidgetRect:
             tags=("center_v", self.name)
         )
         self.canvas.create_text(
-            bx + bw * 2 + 2 + bw / 2, by + bh / 2, text="V", fill="white",
+            bx + bw + 2 + bw / 2, by + bh / 2, text="V", fill="white",
             font=("Dejavu Sans", 7, "bold"), tags=("center_v", self.name)
         )
 
@@ -159,7 +159,7 @@ class WidgetRect:
         self.canvas.coords(self.resize_handle,
                            sx + sw - hr, sy + sh - hr,
                            sx + sw + hr, sy + sh + hr)
-        bw, bh = 18, 14
+        bw, bh = 14, 12
         bx = sx + sw - bw * 2 - 4
         by = sy + 2
         self.canvas.coords(self.h_btn, bx, by, bx + bw, by + bh)
