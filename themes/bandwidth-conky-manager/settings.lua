@@ -23,7 +23,7 @@ r, g, b = hex2rgb(HTML_color)
 r_border, g_border, b_border = hex2rgb(HTML_color_border)
 
 function draw_icon_bandwidth(cr, x, y, size)
-    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE)
+    cairo_set_operator(cr, operator_transpose[mode])
     cairo_set_source_rgba(cr, r, g, b, transparency_value)
     cairo_set_line_width(cr, 2)
     cairo_move_to(cr, x - size * 0.3, y + size * 0.6)
