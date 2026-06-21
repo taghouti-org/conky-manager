@@ -41,7 +41,7 @@ AUTOSTART_DIR = HOME / ".config" / "autostart"
 DATA_DIR = HOME / ".local" / "share" / "conky-manager"
 SETTINGS_FILE = DATA_DIR / "settings.json"
 LOG_FILE = DATA_DIR / "manager.log"
-VERSION = "2.2.0"
+VERSION = "2.2.1"
 REPO_URL = "https://github.com/taghouti-org/conky-manager.git"
 
 # Supported archive extensions
@@ -887,7 +887,7 @@ class ConkyManagerGUI:
         """Open the settings window for theme configuration"""
         settings_win = ctk.CTkToplevel(self.root)
         settings_win.title("Settings")
-        settings_win.geometry("400x320")
+        settings_win.geometry("400x420")
         settings_win.resizable(False, False)
 
         ctk.CTkLabel(settings_win, text="Theme Settings", font=('Helvetica', 14, 'bold')).pack(pady=(15, 10))
@@ -916,6 +916,38 @@ class ConkyManagerGUI:
         country_var = tk.StringVar(value=weather_defaults["country_code"])
         ctk.CTkEntry(settings_win, textvariable=country_var, width=100, font=('Helvetica', 10)).pack(anchor="w", padx=15, pady=(0, 10))
 
+        # Bandwidth settings
+        bw_file = Path.home() / ".config/conky/bandwidth-conky-manager/settings.lua"
+        bw_iface = "auto"
+        if bw_file.exists():
+            content = bw_file.read_text()
+            match = re.search(r'iface\s*=\s*"([^"]*)"', content)
+            if match:
+                bw_iface = match.group(1)
+
+        ctk.CTkLabel(settings_win, text="Bandwidth Settings", font=('Helvetica', 12, 'bold')).pack(anchor="w", padx=15, pady=(5, 2))
+
+        ctk.CTkLabel(settings_win, text="Network Interface:", font=('Helvetica', 10)).pack(anchor="w", padx=15)
+
+        # Detect available interfaces
+        interfaces = ["auto"]
+        try:
+            result = subprocess.run(['ip', '-o', 'link', 'show', 'up'], capture_output=True, text=True, timeout=5)
+            for line in result.stdout.splitlines():
+                parts = line.split(':')
+                if len(parts) >= 2:
+                    name = parts[1].strip()
+                    if name != "lo":
+                        interfaces.append(name)
+        except Exception:
+            pass
+
+        iface_var = tk.StringVar(value=bw_iface)
+        iface_combo = ctk.CTkComboBox(settings_win, variable=iface_var, values=interfaces,
+                                       width=200, height=24, state="readonly", corner_radius=0,
+                                       font=('Helvetica', 10))
+        iface_combo.pack(anchor="w", padx=15, pady=(0, 10))
+
         def save_settings():
             if weather_file.exists():
                 content = weather_file.read_text()
@@ -923,7 +955,11 @@ class ConkyManagerGUI:
                 content = re.sub(r'(city\s*=\s*")[^"]*"', rf'\g<1>{city_var.get()}"', content)
                 content = re.sub(r'(country_code\s*=\s*")[^"]*"', rf'\g<1>{country_var.get()}"', content)
                 weather_file.write_text(content)
-            messagebox.showinfo("Settings", "Settings saved. Restart weather theme to apply.")
+            if bw_file.exists():
+                content = bw_file.read_text()
+                content = re.sub(r'(iface\s*=\s*")[^"]*"', rf'\g<1>{iface_var.get()}"', content)
+                bw_file.write_text(content)
+            messagebox.showinfo("Settings", "Settings saved. Restart affected themes to apply.")
             settings_win.destroy()
 
         ctk.CTkButton(settings_win, text="Save", command=save_settings, width=100, height=28,

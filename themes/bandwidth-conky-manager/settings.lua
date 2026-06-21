@@ -2,7 +2,10 @@ require 'cairo'
 require 'cairo_xlib'
 os.setlocale("en_US.utf8", "numeric")
 
-HTML_color = "#FFFFFF"
+-- ###Bandwidth settings###
+iface = "auto"
+
+-- ###Style###
 HTML_color_border = "#FFFFFF"
 transparency_bg = 0.6
 transparency_border = 0.1
@@ -71,17 +74,21 @@ function draw_network_bandwidth(cr, x, y)
     draw_icon_bandwidth(cr, x + 15, y + 15, 20)
     draw_text(cr, x + 35, y + 20, "BANDWIDTH", 12, transparency_value)
 
-    local down = conky_parse('${downspeed wlp2s0}')
-    if down == "0B/s" then
-        down = conky_parse('${downspeed enp1s0f0}')
+    local iface_name = iface
+    if iface_name == "auto" then
+        local down = conky_parse('${downspeed wlp2s0}')
+        if down == "0B/s" then
+            iface_name = "enp1s0f0"
+        else
+            iface_name = "wlp2s0"
+        end
     end
+
+    local down = conky_parse('${downspeed ' .. iface_name .. '}')
     draw_text(cr, x + 10, y + 45, "Download", 12, transparency_text)
     draw_text(cr, x + 10, y + 60, down, 14, transparency_value)
 
-    local up = conky_parse('${upspeed wlp2s0}')
-    if up == "0B/s" then
-        up = conky_parse('${upspeed enp1s0f0}')
-    end
+    local up = conky_parse('${upspeed ' .. iface_name .. '}')
     draw_text(cr, x + 10, y + 80, "Upload", 12, transparency_text)
     draw_text(cr, x + 10, y + 95, up, 14, transparency_value)
 end

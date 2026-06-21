@@ -26,7 +26,7 @@ A full-featured Python/CustomTkinter GUI for managing Conky themes on Linux.
 - **Autostart** - Configure themes to start on login via `.desktop` entries
 - **Layout Editor** - Drag-and-drop interface for positioning widgets with zoom, alignment guides, and magnetic snapping
 - **Auto-Update** - Check for updates from git repo, backup and apply automatically
-- **Settings** - Configure weather API key, city, and country code
+- **Settings** - Configure weather API key, city, country code, and bandwidth network interface
 - **Theme Editing** - Edit theme configs directly from the manager
 - **Theme Deletion** - Remove unused themes (multi-select supported)
 - **Dark Mode** - Modern dark UI with blue accent theme via CustomTkinter
@@ -145,7 +145,7 @@ python3 /opt/conky-manager/conky_manager.py
 - **Stop All** - Stop all running themes
 - **Restart** - Restart all running themes
 - **Layout** - Open drag-and-drop layout editor
-- **Settings** - Configure weather API key, city, and country code
+- **Settings** - Configure weather API key, city, country code, and bandwidth network interface
 - **Update** - Check for and apply updates from git repo
 - **Restart Manager** - Restart the manager application
 
