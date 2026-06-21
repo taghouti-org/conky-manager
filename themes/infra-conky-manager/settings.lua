@@ -97,6 +97,7 @@ function draw_infra_widget(cr, x, y)
 
     draw_icon_server(cr, x + 15, y + 15, 20)
     draw_text(cr, x + 35, y + 20, "INFRA", 12, transparency_value)
+    draw_text(cr, x + w - 75, y + 20, "CISA KEV", 8, transparency_text)
 
     -- Fetch data
     local raw = conky_parse("${exec python3 ~/.config/conky/infra-conky-manager/fetch_infra_vulns.py --get_list --count 5 2>/dev/null}")
@@ -141,8 +142,6 @@ function draw_infra_widget(cr, x, y)
         draw_text(cr, x + 10, cy, "No infra CVEs", 11, transparency_text)
     end
 
-    -- Footer
-    draw_text(cr, x + 10, y + h - 12, "Source: CISA KEV", 8, transparency_text)
 end
 
 function draw_function(cr)

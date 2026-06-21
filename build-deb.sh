@@ -4,7 +4,7 @@
 set -e
 
 PACKAGE_NAME="conky-manager"
-VERSION="2.2.3"
+VERSION="2.2.4"
 ARCH="all"
 BUILD_DIR="deb"
 
