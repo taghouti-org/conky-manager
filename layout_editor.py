@@ -101,6 +101,8 @@ class WidgetRect:
         self.rect = None
         self.label = None
         self.resize_handle = None
+        self.h_btn = None
+        self.v_btn = None
         self.drag_data = {"x": 0, "y": 0}
         self.resizing = False
         self.draw()
@@ -125,6 +127,27 @@ class WidgetRect:
             fill="#ff4444", outline="#ffffff", width=1,
             tags=("resize_handle", self.name)
         )
+        bw, bh = 18, 14
+        bx = sx + sw - bw * 2 - 4
+        by = sy + 2
+        self.h_btn = self.canvas.create_rectangle(
+            bx, by, bx + bw, by + bh,
+            fill="#3366cc", outline="#ffffff", width=1,
+            tags=("center_h", self.name)
+        )
+        self.canvas.create_text(
+            bx + bw / 2, by + bh / 2, text="H", fill="white",
+            font=("Dejavu Sans", 7, "bold"), tags=("center_h", self.name)
+        )
+        self.v_btn = self.canvas.create_rectangle(
+            bx + bw + 2, by, bx + bw * 2 + 2, by + bh,
+            fill="#3366cc", outline="#ffffff", width=1,
+            tags=("center_v", self.name)
+        )
+        self.canvas.create_text(
+            bx + bw * 2 + 2 + bw / 2, by + bh / 2, text="V", fill="white",
+            font=("Dejavu Sans", 7, "bold"), tags=("center_v", self.name)
+        )
 
     def update_position(self):
         s = self.scale
@@ -136,6 +159,11 @@ class WidgetRect:
         self.canvas.coords(self.resize_handle,
                            sx + sw - hr, sy + sh - hr,
                            sx + sw + hr, sy + sh + hr)
+        bw, bh = 18, 14
+        bx = sx + sw - bw * 2 - 4
+        by = sy + 2
+        self.canvas.coords(self.h_btn, bx, by, bx + bw, by + bh)
+        self.canvas.coords(self.v_btn, bx + bw + 2, by, bx + bw * 2 + 2, by + bh)
 
     def move(self, dx, dy):
         self.x = max(0, min(self.screen_w - self.w, self.x + dx))
@@ -449,6 +477,20 @@ class LayoutEditor:
         items = self.canvas.find_overlapping(event.x - 5, event.y - 5, event.x + 5, event.y + 5)
         for item in items:
             tags = self.canvas.gettags(item)
+            if "center_h" in tags:
+                for tag in tags:
+                    if tag in self.widgets:
+                        w = self.widgets[tag]
+                        w.x = int((self.screen_w - w.w) / 2)
+                        w.update_position()
+                        return
+            if "center_v" in tags:
+                for tag in tags:
+                    if tag in self.widgets:
+                        w = self.widgets[tag]
+                        w.y = int((self.screen_h - w.h) / 2)
+                        w.update_position()
+                        return
             for tag in tags:
                 if tag in self.widgets:
                     self.selected = tag
