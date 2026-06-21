@@ -25,14 +25,12 @@ A full-featured Python/CustomTkinter GUI for managing Conky themes on Linux.
 - **Folder Import** - Import themes directly from local folders
 - **Autostart** - Configure themes to start on login via `.desktop` entries
 - **Layout Editor** - Drag-and-drop interface for positioning widgets with zoom, alignment guides, and magnetic snapping
-- **Auto-Update** - Check for updates from git repo, backup and apply automatically
+- **Auto-Update** - Check for updates from git repo (fetch + reset --hard, preserves user config values)
 - **Settings** - Configure weather API key, city, country code, and bandwidth network interface
 - **Theme Editing** - Edit theme configs directly from the manager
 - **Theme Deletion** - Remove unused themes (multi-select supported)
 - **Dark Mode** - Modern dark UI with blue accent theme via CustomTkinter
-- **Wayland Support** - Full compatibility with Wayland via cairo_xlib
-- **Settings Window** - Configure weather API key, city, and country code
-- **Dark Mode** - Modern dark UI with blue accent theme
+- **Wayland Support** - Full compatibility with Wayland (cairo_xlib optional via pcall)
 - **Wayland Support** - Full compatibility with Wayland via cairo_xlib
 
 ## Included Themes
@@ -49,10 +47,10 @@ A full-featured Python/CustomTkinter GUI for managing Conky themes on Linux.
 ### Monitoring
 | Theme | Description |
 |-------|-------------|
-| `crypto-conky-manager` | Cryptocurrency prices with 7-day chart (default: SOL) |
-| `kev-conky-manager` | CISA Known Exploited Vulnerabilities feed |
-| `infra-conky-manager` | Infrastructure CVEs (k8s, docker, postgres, redis, etc.) |
-| `weather-conky-manager` | Weather display with OpenWeatherMap API |
+| `crypto-conky-manager` | Cryptocurrency prices with 7-day chart (configurable coin) |
+| `kev-conky-manager` | CISA Known Exploited Vulnerabilities with flashing dot for recent entries |
+| `infra-conky-manager` | Infrastructure CVEs with flashing dot for recent entries |
+| `weather-conky-manager` | Weather display with OpenWeatherMap API (configurable city) |
 
 ### Desktop Widgets
 | Theme | Description |
@@ -173,8 +171,10 @@ The layout editor provides a visual interface for positioning widgets:
 The manager automatically checks for updates on startup:
 - Compares local version with remote VERSION file
 - Shows "Update (NEW)" button when updates available
-- Backs up current installation before applying
+- Uses `git fetch` + `reset --hard` + `clean -fdx` (handles diverged branches)
+- Preserves user config values (API key, city, iface, coin settings) during update
 - Updates manager files and all themes
+- Backs up current installation before applying
 
 ## Conky 1.19 Compatibility
 
