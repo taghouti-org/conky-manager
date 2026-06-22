@@ -21,17 +21,26 @@ MIN_SCREEN_W = 800
 MIN_SCREEN_H = 600
 MIN_WIDGET_SIZES = {
     "crypto-conky-manager": (250, 250),
+    "crypto-gray-conky-manager": (250, 250),
     "kev-conky-manager": (250, 250),
+    "kev-gray-conky-manager": (250, 250),
     "infra-conky-manager": (250, 250),
+    "infra-gray-conky-manager": (250, 250),
     "bandwidth-conky-manager": (220, 120),
+    "bandwidth-gray-conky-manager": (220, 120),
     "network-conky-manager": (220, 160),
+    "network-gray-conky-manager": (220, 160),
     "processes-conky-manager": (250, 220),
+    "processes-gray-conky-manager": (250, 220),
     "docker-conky-manager": (250, 180),
+    "docker-gray-conky-manager": (250, 180),
     "k8s-conky-manager": (250, 140),
+    "k8s-gray-conky-manager": (250, 140),
     "weather-conky-manager": (120, 120),
     "calendar-conky-manager": (600, 500),
+    "calendar-gray-conky-manager": (600, 500),
     "revisited-conky-manager": (1044, 92),
-    "claude-conky-manager": (300, 420),
+    "revisited-gray-conky-manager": (1044, 92),
 }
 MAX_SCREEN_W = 7680
 MAX_SCREEN_H = 4320
@@ -480,17 +489,26 @@ class LayoutEditor:
         running = self.get_running_themes()
         default_widgets = {
             "crypto-conky-manager": {"x": 45, "y": 543, "w": 250, "h": 250, "color": "#e94560"},
+            "crypto-gray-conky-manager": {"x": 315, "y": 543, "w": 250, "h": 250, "color": "#555555"},
             "kev-conky-manager": {"x": 1626, "y": 824, "w": 250, "h": 250, "color": "#ff4444"},
+            "kev-gray-conky-manager": {"x": 1626, "y": 554, "w": 250, "h": 250, "color": "#555555"},
             "infra-conky-manager": {"x": 45, "y": 808, "w": 250, "h": 250, "color": "#ff8800"},
+            "infra-gray-conky-manager": {"x": 315, "y": 808, "w": 250, "h": 250, "color": "#555555"},
             "bandwidth-conky-manager": {"x": 45, "y": 230, "w": 244, "h": 124, "color": "#4488ff"},
+            "bandwidth-gray-conky-manager": {"x": 315, "y": 230, "w": 244, "h": 124, "color": "#555555"},
             "network-conky-manager": {"x": 45, "y": 367, "w": 248, "h": 162, "color": "#44aaff"},
+            "network-gray-conky-manager": {"x": 315, "y": 367, "w": 248, "h": 162, "color": "#555555"},
             "processes-conky-manager": {"x": 1626, "y": 230, "w": 250, "h": 220, "color": "#ff88ff"},
+            "processes-gray-conky-manager": {"x": 1626, "y": 24, "w": 250, "h": 220, "color": "#555555"},
             "docker-conky-manager": {"x": 1626, "y": 466, "w": 250, "h": 180, "color": "#88ff88"},
+            "docker-gray-conky-manager": {"x": 1626, "y": 260, "w": 250, "h": 180, "color": "#555555"},
             "k8s-conky-manager": {"x": 1626, "y": 665, "w": 250, "h": 140, "color": "#ffff44"},
+            "k8s-gray-conky-manager": {"x": 1626, "y": 455, "w": 250, "h": 140, "color": "#555555"},
             "weather-conky-manager": {"x": 1694, "y": 69, "w": 114, "h": 110, "color": "#4488ff"},
             "calendar-conky-manager": {"x": 660, "y": 350, "w": 600, "h": 500, "color": "#44ff88"},
-            "claude-conky-manager": {"x": 1520, "y": 470, "w": 300, "h": 300, "color": "#8888ff"},
+            "calendar-gray-conky-manager": {"x": 660, "y": 870, "w": 600, "h": 500, "color": "#555555"},
             "revisited-conky-manager": {"x": 438, "y": 39, "w": 1044, "h": 92, "color": "#884488"},
+            "revisited-gray-conky-manager": {"x": 438, "y": 146, "w": 1044, "h": 92, "color": "#555555"},
         }
 
         for name, defaults in default_widgets.items():

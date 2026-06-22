@@ -42,17 +42,20 @@ class TestLuaSyntax:
 
     def test_calendar_lua_widgets_parse(self):
         """Calendar lua_widgets.lua must parse without syntax errors."""
-        lua_file = THEMES_DIR / "calendar-conky-manager" / "conky" / "lua_widgets.lua"
-        if lua_file.exists():
-            ok, err = run_luac(lua_file)
-            assert ok, f"lua_widgets.lua has syntax errors:\n{err}"
+        for variant in ["calendar-conky-manager", "calendar-gray-conky-manager"]:
+            lua_file = THEMES_DIR / variant / "conky" / "lua_widgets.lua"
+            if lua_file.exists():
+                ok, err = run_luac(lua_file)
+                assert ok, f"{variant} lua_widgets.lua has syntax errors:\n{err}"
 
     def test_revisited_settings_parse(self):
         """All revisited settings.lua variants must parse."""
-        revisited_dir = THEMES_DIR / "revisited-conky-manager"
-        for lua_file in revisited_dir.rglob("settings.lua"):
-            ok, err = run_luac(lua_file)
-            assert ok, f"{lua_file.relative_to(revisited_dir)} has syntax errors:\n{err}"
+        for variant in ["revisited-conky-manager", "revisited-gray-conky-manager"]:
+            revisited_dir = THEMES_DIR / variant
+            if revisited_dir.exists():
+                for lua_file in revisited_dir.rglob("settings.lua"):
+                    ok, err = run_luac(lua_file)
+                    assert ok, f"{variant}/{lua_file.name} has syntax errors:\n{err}"
 
 
 class TestLuaCorrectness:
@@ -107,11 +110,12 @@ class TestLuaCorrectness:
 
     def test_no_docker_typo(self):
         """Docker settings.lua must not have size * 05 typo."""
-        docker_lua = THEMES_DIR / "docker-conky-manager" / "settings.lua"
-        if docker_lua.exists():
-            content = docker_lua.read_text()
-            assert "size * 05" not in content, \
-                "docker settings.lua still has size * 05 typo"
+        for variant in ["docker-conky-manager", "docker-gray-conky-manager"]:
+            docker_lua = THEMES_DIR / variant / "settings.lua"
+            if docker_lua.exists():
+                content = docker_lua.read_text()
+                assert "size * 05" not in content, \
+                    f"{variant} settings.lua still has size * 05 typo"
 
     def test_local_variables_in_draw_functions(self):
         """draw_function should use local variables for x, y."""
