@@ -23,8 +23,8 @@ MIN_WIDGET_SIZES = {
     "crypto-conky-manager": (250, 250),
     "kev-conky-manager": (250, 250),
     "infra-conky-manager": (250, 250),
-    "bandwidth-conky-manager": (220, 120),
-    "network-conky-manager": (220, 160),
+    "bandwidth-conky-manager": (250, 120),
+    "network-conky-manager": (250, 160),
     "processes-conky-manager": (250, 220),
     "docker-conky-manager": (250, 180),
     "k8s-conky-manager": (250, 140),
@@ -146,12 +146,6 @@ class WidgetRect:
             text=self.name, fill="white", font=("Dejavu Sans", 8, "bold"),
             tags=("widget_label", self.name)
         )
-        hr = 5
-        self.resize_handle = self.canvas.create_rectangle(
-            sx + sw - hr, sy + sh - hr, sx + sw + hr, sy + sh + hr,
-            fill="#ff4444", outline="#ffffff", width=1,
-            tags=("resize_handle", self.name)
-        )
         bw, bh = 14, 12
         bx = sx + sw - bw * 2 - 4
         by = sy + 2
@@ -180,10 +174,6 @@ class WidgetRect:
         sw, sh = self.w * s, self.h * s
         self.canvas.coords(self.rect, sx, sy, sx + sw, sy + sh)
         self.canvas.coords(self.label, sx + sw / 2, sy + sh / 2)
-        hr = 5
-        self.canvas.coords(self.resize_handle,
-                           sx + sw - hr, sy + sh - hr,
-                           sx + sw + hr, sy + sh + hr)
         bw, bh = 14, 12
         bx = sx + sw - bw * 2 - 4
         by = sy + 2
@@ -202,13 +192,6 @@ class WidgetRect:
             self.y = new_y
             self.update_position()
         return actual_dx, actual_dy
-
-    def resize(self, dx, dy):
-        new_w = max(self.min_w, self.w + dx)
-        new_h = max(self.min_h, self.h + dy)
-        self.w = min(new_w, self.screen_w - self.x)
-        self.h = min(new_h, self.screen_h - self.y)
-        self.update_position()
 
     def to_dict(self):
         return {"x": int(self.x), "y": int(self.y),
@@ -289,7 +272,6 @@ class LayoutEditor:
 
         self.mode_var = tk.StringVar(value="move")
         ctk.CTkRadioButton(toolbar, text="Move", variable=self.mode_var, value="move").pack(side="left", padx=10)
-        ctk.CTkRadioButton(toolbar, text="Resize", variable=self.mode_var, value="resize").pack(side="left", padx=2)
 
         sep2 = ctk.CTkFrame(toolbar, width=2, height=20, fg_color="gray40")
         sep2.pack(side="left", fill="y", padx=5)
@@ -491,8 +473,8 @@ class LayoutEditor:
             "crypto-conky-manager": {"x": 45, "y": 543, "w": 250, "h": 250, "color": "#e94560"},
             "kev-conky-manager": {"x": 1626, "y": 824, "w": 250, "h": 250, "color": "#ff4444"},
             "infra-conky-manager": {"x": 45, "y": 808, "w": 250, "h": 250, "color": "#ff8800"},
-            "bandwidth-conky-manager": {"x": 45, "y": 230, "w": 220, "h": 120, "color": "#4488ff"},
-            "network-conky-manager": {"x": 45, "y": 367, "w": 220, "h": 160, "color": "#44aaff"},
+            "bandwidth-conky-manager": {"x": 45, "y": 230, "w": 250, "h": 120, "color": "#4488ff"},
+            "network-conky-manager": {"x": 45, "y": 367, "w": 250, "h": 160, "color": "#44aaff"},
             "processes-conky-manager": {"x": 1626, "y": 230, "w": 250, "h": 220, "color": "#ff88ff"},
             "docker-conky-manager": {"x": 1626, "y": 466, "w": 250, "h": 180, "color": "#88ff88"},
             "k8s-conky-manager": {"x": 1626, "y": 665, "w": 250, "h": 140, "color": "#ffff44"},
@@ -567,8 +549,6 @@ class LayoutEditor:
                     else:
                         if tag not in self.selected:
                             self.selected = {tag}
-                    if "resize_handle" in tags:
-                        self.mode_var.set("resize")
                     self._update_selection_highlight()
                     return
         if not ctrl:
@@ -598,11 +578,7 @@ class LayoutEditor:
         dy = (event.y - self.drag_data["y"]) / self.scale
         self.drag_data = {"x": event.x, "y": event.y}
 
-        if self.mode_var.get() == "resize":
-            primary = next(iter(self.selected))
-            if primary in self.widgets:
-                self.widgets[primary].resize(dx, dy)
-        else:
+        if self.mode_var.get() == "move":
             primary = next(iter(self.selected))
             if primary in self.widgets:
                 actual_dx, actual_dy = self.widgets[primary].move(dx, dy)
@@ -815,8 +791,8 @@ class LayoutEditor:
             "crypto-conky-manager": (250, 250),
             "kev-conky-manager": (250, 250),
             "infra-conky-manager": (250, 250),
-            "bandwidth-conky-manager": (220, 120),
-            "network-conky-manager": (220, 160),
+            "bandwidth-conky-manager": (250, 120),
+            "network-conky-manager": (250, 160),
             "processes-conky-manager": (250, 220),
             "docker-conky-manager": (250, 180),
             "k8s-conky-manager": (250, 140),
@@ -844,7 +820,6 @@ class LayoutEditor:
             w = self.widgets[name]
             self.canvas.delete(w.rect)
             self.canvas.delete(w.label)
-            self.canvas.delete(w.resize_handle)
             self.canvas.delete(w.h_btn)
             self.canvas.delete(w.h_btn_text)
             self.canvas.delete(w.v_btn)

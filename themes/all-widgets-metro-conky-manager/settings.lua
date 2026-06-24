@@ -218,7 +218,7 @@ function draw_icon_network(cr, x, y, size)
 end
 
 function draw_network_info(cr, x, y)
-    local w, h = 220, 160
+    local w, h = 250, 160
     draw_square(cr, x, y, w, h, transparency_bg)
     draw_icon_network(cr, x + 15, y + 15, 20)
     draw_text(cr, x + 35, y + 20, "NETWORK", 12, transparency_value)
@@ -260,7 +260,7 @@ function draw_icon_bandwidth(cr, x, y, size)
 end
 
 function draw_network_bandwidth(cr, x, y)
-    local w, h = 220, 120
+    local w, h = 250, 120
     draw_square(cr, x, y, w, h, transparency_bg)
     draw_icon_bandwidth(cr, x + 15, y + 15, 20)
     draw_text(cr, x + 35, y + 20, "BANDWIDTH", 12, transparency_value)
