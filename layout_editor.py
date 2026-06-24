@@ -582,12 +582,17 @@ class LayoutEditor:
         else:
             primary = next(iter(self.selected))
             if primary in self.widgets:
+                prev_x = self.widgets[primary].x
+                prev_y = self.widgets[primary].y
                 self.widgets[primary].move(dx, dy)
                 snap_dx, snap_dy, guides = self._compute_snap(primary)
                 if snap_dx != 0 or snap_dy != 0:
-                    for name in self.selected:
-                        if name in self.widgets:
-                            self.widgets[name].move(snap_dx, snap_dy)
+                    self.widgets[primary].move(snap_dx, snap_dy)
+                actual_dx = self.widgets[primary].x - prev_x
+                actual_dy = self.widgets[primary].y - prev_y
+                for name in self.selected:
+                    if name in self.widgets and name != primary:
+                        self.widgets[name].move(actual_dx, actual_dy)
                 self._clear_guides()
                 for x1, y1, x2, y2 in guides:
                     self._draw_guide(x1, y1, x2, y2)
