@@ -701,13 +701,13 @@ function draw_weather_widget(cr, x, y)
     draw_weather_circle(cr, pos_x, pos_y, radius, transparency_w)
     draw_weather_border(cr, pos_x, pos_y, radius + 1, transparency_border_w)
 
-    cairo_select_font_face(cr, "Dejavu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+    cairo_select_font_face(cr, "DejaVu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
     draw_weather_text(cr, pos_x, pos_y, r_text_w, g_text_w, b_text_w, transparency_text_w, city, City_font, 0, -35)
 
     local day = conky_parse('${exec date +%A}') or "N/A"
     draw_weather_text(cr, pos_x, pos_y, r_text_w, g_text_w, b_text_w, transparency_text_w, day, Day_font, 0, 35)
 
-    cairo_select_font_face(cr, "Dejavu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD)
+    cairo_select_font_face(cr, "DejaVu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD)
     local temperature = conky_parse("${exec ~/.config/conky/all-widgets-conky-manager/openweather.py --get_temp_c --api_key " .. api_key .. " --city " .. "\"" .. city .. "\"" .. " --ccode " .. country_code .. "}") or "N/A"
     draw_weather_text(cr, pos_x, pos_y, r_text_w, g_text_w, b_text_w, transparency_text_w, temperature .. "˚C", Temperature_font, 19.25, 0)
 
@@ -793,7 +793,7 @@ function draw_calendar_widget(cr, x, y)
 
     cairo_set_line_width(cr, 3)
     cairo_set_font_size(cr, 12)
-    cairo_select_font_face(cr, "Dejavu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+    cairo_select_font_face(cr, "DejaVu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
 
     cal_create_circle(cr, 2 * center_x, 2 * center_y, 52.0, 2, 3.5, 225, 3, CAIRO_OPERATOR_OVER, 4, tonumber(conky_parse('${exec date +%V}')), '')
     cal_create_circle(cr, 2 * center_x, 2 * center_y, tonumber(conky_parse('${exec cal |egrep -v [a-z] |wc -w}')), 2, 3.5, 200, 13, CAIRO_OPERATOR_CLEAR, -4.5, tonumber(conky_parse('${exec date +%d}')), '')
@@ -1121,7 +1121,7 @@ end
 
 function draw_function(cr)
     local w, h = conky_window.width, conky_window.height
-    cairo_select_font_face(cr, "Dejavu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
+    cairo_select_font_face(cr, "DejaVu Sans Book", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL)
 
     -- Network
     local nx = positions["network-conky-manager"].x

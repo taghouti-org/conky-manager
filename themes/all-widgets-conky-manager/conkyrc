@@ -21,7 +21,7 @@ conky.config = {
     draw_outline = false,
     draw_borders = false,
     draw_graph_borders = false,
-    font = 'Dejavu Sans:size=10',
+    font = 'DejaVu Sans:size=10',
     xftalpha = 0.8,
     uppercase = false,
     default_color = 'FFFFFF',
