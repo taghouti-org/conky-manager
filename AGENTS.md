@@ -197,6 +197,11 @@ conky.text = [[
 - Settings window reads/writes unified settings.lua for weather/bandwidth/crypto
 - `preserve_keys` updated for unified theme names
 
+### Unified Theme Fixes (v3.0.1)
+- Created default `positions.lua` with positions for all 11 widgets
+- Created default `layout.json` with widget dimensions
+- Fixed font name: `Dejavu Sans` → `DejaVu Sans` (correct X11 font name)
+
 ## Adding New Themes
 
 1. Create `themes/<name>-conky-manager/` directory (MUST use `-conky-manager` suffix)

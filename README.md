@@ -66,7 +66,7 @@ All widgets run in a single conky instance per theme:
 
 ```bash
 # Download and install
-sudo dpkg -i conky-manager_3.0.0_all.deb
+sudo dpkg -i conky-manager_3.0.1_all.deb
 sudo apt install -f  # Fix dependencies if needed
 ```
 
