@@ -920,6 +920,8 @@ class ConkyManagerGUI:
         # Weather settings (unified theme)
         weather_file = Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua"
         if not weather_file.exists():
+            weather_file = Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua"
+        if not weather_file.exists():
             weather_file = Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"
         weather_defaults = {"api_key": "", "city": "", "country_code": ""}
         if weather_file.exists():
@@ -945,6 +947,8 @@ class ConkyManagerGUI:
 
         # Bandwidth settings (unified theme)
         bw_file = Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua"
+        if not bw_file.exists():
+            bw_file = Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua"
         if not bw_file.exists():
             bw_file = Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"
         bw_iface = "auto"
@@ -979,6 +983,8 @@ class ConkyManagerGUI:
 
         # Widget visibility settings (unified theme)
         widget_file = Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua"
+        if not widget_file.exists():
+            widget_file = Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua"
         if not widget_file.exists():
             widget_file = Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"
         widget_defaults = {
@@ -1017,8 +1023,9 @@ class ConkyManagerGUI:
             switch.grid(row=i//3, column=i%3, sticky="w", padx=2, pady=2)
 
         def save_settings():
-            # Save weather settings (to both unified theme variants)
+            # Save weather settings (to all unified theme variants)
             for wf in [Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua",
+                       Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua",
                        Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"]:
                 if wf.exists():
                     content = wf.read_text()
@@ -1026,15 +1033,17 @@ class ConkyManagerGUI:
                     content = re.sub(r'(city\s*=\s*")[^"]*"', rf'\g<1>{city_var.get()}"', content)
                     content = re.sub(r'(country_code\s*=\s*")[^"]*"', rf'\g<1>{country_var.get()}"', content)
                     wf.write_text(content)
-            # Save bandwidth settings (to both unified theme variants)
+            # Save bandwidth settings (to all unified theme variants)
             for bf in [Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua",
+                       Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua",
                        Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"]:
                 if bf.exists():
                     content = bf.read_text()
                     content = re.sub(r'(iface\s*=\s*")[^"]*"', rf'\g<1>{iface_var.get()}"', content)
                     bf.write_text(content)
-            # Save widget visibility (to both unified theme variants)
+            # Save widget visibility (to all unified theme variants)
             for wf in [Path.home() / ".config/conky/all-widgets-conky-manager/settings.lua",
+                       Path.home() / ".config/conky/all-widgets-metro-conky-manager/settings.lua",
                        Path.home() / ".config/conky/all-widgets-gray-conky-manager/settings.lua"]:
                 if wf.exists():
                     content = wf.read_text()
@@ -1215,10 +1224,12 @@ class ConkyManagerGUI:
                         # User-configurable keys to preserve per theme
                         preserve_string_keys = {
                             "all-widgets-conky-manager": ["api_key", "city", "country_code", "iface", "coin_id", "currency", "coin_symbol", "chart_days"],
+                            "all-widgets-metro-conky-manager": ["api_key", "city", "country_code", "iface", "coin_id", "currency", "coin_symbol", "chart_days"],
                             "all-widgets-gray-conky-manager": ["api_key", "city", "country_code", "iface", "coin_id", "currency", "coin_symbol", "chart_days"],
                         }
                         preserve_bool_keys = {
                             "all-widgets-conky-manager": ["enabled_network", "enabled_bandwidth", "enabled_processes", "enabled_docker", "enabled_k8s", "enabled_crypto", "enabled_kev", "enabled_infra", "enabled_weather", "enabled_calendar", "enabled_revisited"],
+                            "all-widgets-metro-conky-manager": ["enabled_network", "enabled_bandwidth", "enabled_processes", "enabled_docker", "enabled_k8s", "enabled_crypto", "enabled_kev", "enabled_infra", "enabled_weather", "enabled_calendar", "enabled_revisited"],
                             "all-widgets-gray-conky-manager": ["enabled_network", "enabled_bandwidth", "enabled_processes", "enabled_docker", "enabled_k8s", "enabled_crypto", "enabled_kev", "enabled_infra", "enabled_weather", "enabled_calendar", "enabled_revisited"],
                         }
                         for theme_dir in themes_dir.iterdir():

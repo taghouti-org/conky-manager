@@ -880,8 +880,8 @@ class LayoutEditor:
 
     def restart_themes(self, theme_names):
         conky_config = Path.home() / ".config" / "conky"
-        # Unified theme: always restart all-widgets-conky-manager (and gray variant)
-        unified_themes = ["all-widgets-conky-manager", "all-widgets-gray-conky-manager"]
+        # Unified theme: always restart all unified theme variants
+        unified_themes = ["all-widgets-conky-manager", "all-widgets-metro-conky-manager", "all-widgets-gray-conky-manager"]
         # Kill phase
         for name in unified_themes:
             conkyrc = conky_config / name / "conkyrc"
